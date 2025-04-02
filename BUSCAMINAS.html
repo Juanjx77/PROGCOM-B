@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscaminas Épico</title>
+    <style>
+        :root {
+            --color-primario: #2c3e50;
+            --color-secundario: #3498db;
+            --color-fondo: #ecf0f1;
+            --color-texto: #2c3e50;
+            --color-boton: #e74c3c;
+            --color-boton-hover: #c0392b;
+            --color-celda: #bdc3c7;
+            --color-celda-hover: #95a5a6;
+            --color-celda-descubierta: #ecf0f1;
+            --color-mina: #e74c3c;
+            --color-mina-dorada: #f1c40f;
+            --color-1: #3498db;    /* Azul */
+            --color-2: #2ecc71;    /* Verde */
+            --color-3: #e74c3c;    /* Rojo */
+            --color-4: #9b59b6;    /* Morado */
+            --color-5: #f39c12;    /* Naranja */
+            --color-6: #1abc9c;    /* Turquesa */
+            --color-7: #34495e;    /* Azul oscuro */
+            --color-8: #7f8c8d;    /* Gris */
+            --color-powerup: #2ecc71;
+            --color-bandera: #e74c3c;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, var(--color-fondo), #bdc3c7);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: var(--color-texto);
+        }
+        
+        h1 {
+            color: var(--color-primario);
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-size: 2.5em;
+            background: linear-gradient(to right, var(--color-primario), var(--color-secundario));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .menu-inicio {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 500px;
+            border: 2px solid var(--color-secundario);
+        }
+        
+        .menu-inicio h2 {
+            color: var(--color-primario);
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+        
+        .opciones {
+            margin: 20px 0;
+        }
+        
+        select, input {
+            padding: 10px 15px;
+            margin: 8px;
+            border-radius: 8px;
+            border: 2px solid var(--color-secundario);
+            font-size: 1em;
+            background-color: white;
+            color: var(--color-texto);
+            transition: all 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--color-primario);
+            box-shadow: 0 0 5px var(--color-secundario);
+        }
+        
+        button {
+            padding: 12px 25px;
+            margin: 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-inicio {
+            background: linear-gradient(45deg, var(--color-secundario), var(--color-primario));
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn-inicio:hover {
+            background: linear-gradient(45deg, var(--color-primario), var(--color-secundario));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        
+        .btn-inicio:active {
+            transform: translateY(0);
+        }
+        
+        .tablero {
+            display: grid;
+            gap: 3px;
+            margin: 20px 0;
+            background-color: var(--color-primario);
+            padding: 5px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border: 3px solid var(--color-primario);
+            position: relative;
+        }
+        
+        .celda {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(145deg, var(--color-celda), #a1a1a1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            user-select: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .celda:hover {
+            background: linear-gradient(145deg, var(--color-celda-hover), #8e8e8e);
+            transform: scale(1.05);
+        }
+        
+        .celda.descubierta {
+            background: var(--color-celda-descubierta);
+            transform: scale(1);
+            box-shadow: none;
+        }
+        
+        .celda.mina {
+            background: var(--color-mina);
+            color: white;
+        }
+        
+        .celda.mina-dorada {
+            background: linear-gradient(45deg, var(--color-mina-dorada), #e67e22);
+            color: white;
+        }
+        
+        .celda.powerup {
+            background: linear-gradient(45deg, var(--color-powerup), #27ae60);
+            color: white;
+        }
+        
+        .celda.bandera {
+            background: linear-gradient(145deg, #f1c40f, #f39c12);
+            color: var(--color-bandera);
+        }
+        
+        /* Efecto de onda al pasar el mouse */
+        .celda::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 100%;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .celda:hover::after {
+            transform: translate(-50%, -50%) scale(4);
+            opacity: 1;
+        }
+        
+        /* Colores para los números */
+        .celda[data-numero="1"] { color: var(--color-1); }
+        .celda[data-numero="2"] { color: var(--color-2); }
+        .celda[data-numero="3"] { color: var(--color-3); }
+        .celda[data-numero="4"] { color: var(--color-4); }
+        .celda[data-numero="5"] { color: var(--color-5); }
+        .celda[data-numero="6"] { color: var(--color-6); }
+        .celda[data-numero="7"] { color: var(--color-7); }
+        .celda[data-numero="8"] { color: var(--color-8); }
+        
+        .reiniciar {
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: linear-gradient(45deg, var(--color-boton), #d62c1a);
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .reiniciar:hover {
+            background: linear-gradient(45deg, var(--color-boton-hover), #b02517);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        
+        .reiniciar:active {
+            transform: translateY(0);
+        }
+        
+        .oculto {
+            display: none;
+        }
+        
+        label {
+            font-weight: bold;
+            margin-right: 5px;
+            color: var(--color-primario);
+        }
+        
+        .contadores {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 10px;
+        }
+        
+        .contador {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--color-primario);
+            background: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .puntos {
+            color: var(--color-mina-dorada);
+            font-weight: bold;
+        }
+        
+        /* Animación de explosión */
+        @keyframes explosion {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(10); opacity: 0; }
+        }
+        
+        .explosion {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #ff0, #f80, #f00);
+            border-radius: 50%;
+            animation: explosion 0.5s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        /* Efecto de pulso para minas doradas descubiertas */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .mina-descubierta {
+            animation: pulse 1s infinite;
+        }
+        
+        /* Tooltip para power-ups */
+        .celda[data-powerup]:hover::before {
+            content: attr(data-powerup);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            white-space: nowrap;
+            z-index: 10;
+            margin-bottom: 5px;
+        }
+        
+        .modo-bandera {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .modo-bandera.activo {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+        
+        @media (max-width: 600px) {
+            .celda {
+                width: 25px;
+                height: 25px;
+                font-size: 0.8em;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .contadores {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Buscaminas Épico</h1>
+    
+    <div class="menu-inicio" id="menuInicio">
+        <h2>Selecciona la dificultad</h2>
+        <div class="opciones">
+            <select id="dificultad">
+                <option value="facil">Fácil</option>
+                <option value="medio">Medio</option>
+                <option value="dificil">Difícil</option>
+                <option value="personalizado">Personalizado</option>
+            </select>
+        </div>
+        
+        <div class="opciones" id="opcionesPersonalizadas" style="display: none;">
+            <div>
+                <label for="filas">Filas:</label>
+                <input type="number" id="filas" min="5" max="20" value="10">
+            </div>
+            <div>
+                <label for="columnas">Columnas:</label>
+                <input type="number" id="columnas" min="5" max="20" value="10">
+            </div>
+            <div>
+                <label for="minas">Minas:</label>
+                <input type="number" id="minas" min="1" max="50" value="15">
+            </div>
+        </div>
+        
+        <button class="btn-inicio" onclick="iniciarJuego()">Comenzar Juego</button>
+    </div>
+    
+    <div class="juego oculto" id="juego">
+        <div class="contadores">
+            <div class="contador">Minas: <span id="contadorMinas">0</span></div>
+            <div class="contador">Puntos: <span class="puntos" id="puntos">0</span></div>
+            <div class="contador">Nivel: <span id="nivel">1</span></div>
+        </div>
+        <div class="modo-bandera" id="modoBandera" onclick="alternarModoBandera()">
+            <span>🚩 Modo Bandera</span>
+        </div>
+        <div class="tablero" id="tablero"></div>
+        <button class="reiniciar" onclick="volverAlMenu()">Volver al Menú</button>
+    </div>
+
+    <audio id="sonidoCelda" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
+    <audio id="sonidoMina" src="https://assets.mixkit.co/sfx/preview/mixkit-explosion-impact-1684.mp3" preload="auto"></audio>
+    <audio id="sonidoVictoria" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
+    <audio id="sonidoPowerup" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
+    <audio id="sonidoMinaDorada" src="https://assets.mixkit.co/sfx/preview/mixkit-coins-handling-1939.mp3" preload="auto"></audio>
+    <audio id="sonidoBandera" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
+
+    <script>
+        let filas, columnas, minas;
+        let tablero = [];
+        let celdasDescubiertas = 0;
+        let minasDoradas = [];
+        let powerups = [];
+        let puntos = 0;
+        let nivel = 1;
+        let escudoActivo = false;
+        let juegoIniciado = false;
+        let modoBandera = false;
+        let banderasColocadas = 0;
+
+        function playSound(id) {
+            const sound = document.getElementById(id);
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("No se pudo reproducir el sonido:", e));
+        }
+
+        document.getElementById('dificultad').addEventListener('change', function() {
+            const opcionesPersonalizadas = document.getElementById('opcionesPersonalizadas');
+            opcionesPersonalizadas.style.display = this.value === 'personalizado' ? 'block' : 'none';
+        });
+
+        function alternarModoBandera() {
+            modoBandera = !modoBandera;
+            const botonBandera = document.getElementById('modoBandera');
+            botonBandera.classList.toggle('activo', modoBandera);
+            botonBandera.innerHTML = modoBandera ? '<span>✅ Modo Bandera (Activo)</span>' : '<span>🚩 Modo Bandera</span>';
+        }
+
+        function iniciarJuego() {
+            if (juegoIniciado) return;
+            juegoIniciado = true;
+            
+            const dificultad = document.getElementById('dificultad').value;
+            
+            switch(dificultad) {
+                case 'facil':
+                    filas = 8;
+                    columnas = 8;
+                    minas = 10;
+                    break;
+                case 'medio':
+                    filas = 10;
+                    columnas = 10;
+                    minas = 20;
+                    break;
+                case 'dificil':
+                    filas = 12;
+                    columnas = 12;
+                    minas = 40;
+                    break;
+                case 'personalizado':
+                    filas = Math.min(20, Math.max(5, parseInt(document.getElementById('filas').value) || 10));
+                    columnas = Math.min(20, Math.max(5, parseInt(document.getElementById('columnas').value) || 10));
+                    const maxMinas = Math.floor(filas * columnas * 0.35);
+                    minas = Math.min(maxMinas, Math.max(1, parseInt(document.getElementById('minas').value) || Math.floor(maxMinas/2)));
+                    break;
+            }
+            
+            document.getElementById('contadorMinas').textContent = minas;
+            document.getElementById('menuInicio').classList.add('oculto');
+            document.getElementById('juego').classList.remove('oculto');
+            
+            celdasDescubiertas = 0;
+            puntos = 0;
+            escudoActivo = false;
+            modoBandera = false;
+            banderasColocadas = 0;
+            document.getElementById('puntos').textContent = puntos;
+            document.getElementById('nivel').textContent = nivel;
+            document.getElementById('modoBandera').classList.remove('activo');
+            document.getElementById('modoBandera').innerHTML = '<span>🚩 Modo Bandera</span>';
+            
+            setTimeout(() => {
+                inicializarTablero();
+                juegoIniciado = false;
+            }, 50);
+        }
+
+        function volverAlMenu() {
+            document.getElementById('juego').classList.add('oculto');
+            document.getElementById('menuInicio').classList.remove('oculto');
+        }
+
+        function inicializarTablero() {
+            const contenedorTablero = document.getElementById('tablero');
+            contenedorTablero.innerHTML = '';
+            contenedorTablero.style.gridTemplateColumns = `repeat(${columnas}, 30px)`;
+            
+            tablero = Array(filas).fill().map(() => Array(columnas).fill(0));
+            minasDoradas = [];
+            powerups = [];
+
+            let celdasDisponibles = filas * columnas;
+            let minasColocadas = 0;
+            
+            while (minasColocadas < minas && celdasDisponibles > 0) {
+                const pos = Math.floor(Math.random() * celdasDisponibles);
+                let contador = 0;
+                
+                for (let x = 0; x < filas; x++) {
+                    for (let y = 0; y < columnas; y++) {
+                        if (tablero[x][y] === 0) {
+                            if (contador === pos) {
+                                const esDorada = Math.random() < 0.1 && minasDoradas.length < Math.floor(minas * 0.1);
+                                tablero[x][y] = esDorada ? -2 : -1;
+                                if (esDorada) minasDoradas.push({x, y});
+                                minasColocadas++;
+                                break;
+                            }
+                            contador++;
+                        }
+                    }
+                    if (minasColocadas > pos) break;
+                }
+                celdasDisponibles--;
+            }
+
+            const totalLupas = Math.min(3, Math.max(1, Math.floor(filas * columnas / 50)));
+            
+            colocarPowerup('escudo');
+            
+            for (let i = 0; i < totalLupas; i++) {
+                colocarPowerup('lupa');
+            }
+
+            for (let x = 0; x < filas; x++) {
+                for (let y = 0; y < columnas; y++) {
+                    if (tablero[x][y] < 0) continue;
+                    
+                    let contador = 0;
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            if (nx >= 0 && nx < filas && ny >= 0 && ny < columnas && (tablero[nx][ny] === -1 || tablero[nx][ny] === -2)) {
+                                contador++;
+                            }
+                        }
+                    }
+                    tablero[x][y] = contador;
+                }
+            }
+
+            const fragmento = document.createDocumentFragment();
+            
+            for (let x = 0; x < filas; x++) {
+                for (let y = 0; y < columnas; y++) {
+                    const celda = document.createElement('div');
+                    celda.className = 'celda';
+                    celda.dataset.x = x;
+                    celda.dataset.y = y;
+                    
+                    if (tablero[x][y] > 0) {
+                        celda.dataset.numero = tablero[x][y];
+                    } else if (tablero[x][y] === -3) {
+                        const powerup = powerups.find(p => p.x === x && p.y === y);
+                        celda.classList.add('powerup');
+                        celda.dataset.powerup = powerup.tipo === 'lupa' ? 'Lupa: Revela un área segura' : 'Escudo: Protege de una mina';
+                    }
+                    
+                    celda.addEventListener('click', (e) => manejarClickCelda(x, y, e));
+                    celda.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        colocarBandera(x, y);
+                    });
+                    celda.addEventListener('mouseover', () => efectoOnda(x, y));
+                    fragmento.appendChild(celda);
+                }
+            }
+            
+            contenedorTablero.appendChild(fragmento);
+        }
+
+        function manejarClickCelda(x, y, event) {
+            if (modoBandera) {
+                colocarBandera(x, y);
+                return;
+            }
+            descubrirCelda(x, y);
+        }
+
+        function colocarBandera(x, y) {
+            const celda = document.querySelector(`.celda[data-x="${x}"][data-y="${y}"]`);
+            
+            if (celda.classList.contains('descubierta')) return;
+            
+            if (celda.classList.contains('bandera')) {
+                celda.classList.remove('bandera');
+                celda.textContent = '';
+                banderasColocadas--;
+            } else {
+                if (banderasColocadas >= minas) {
+                    alert('No puedes colocar más banderas que minas disponibles');
+                    return;
+                }
+                celda.classList.add('bandera');
+                celda.textContent = '🚩';
+                banderasColocadas++;
+                playSound('sonidoBandera');
+            }
+        }
+
+        function colocarPowerup(tipo) {
+            let celdasVacias = [];
+            
+            for (let x = 0; x < filas; x++) {
+                for (let y = 0; y < columnas; y++) {
+                    if (tablero[x][y] === 0) {
+                        celdasVacias.push({x, y});
+                    }
+                }
+            }
+            
+            if (celdasVacias.length > 0) {
+                const pos = Math.floor(Math.random() * celdasVacias.length);
+                const {x, y} = celdasVacias[pos];
+                tablero[x][y] = -3;
+                powerups.push({x, y, tipo});
+            }
+        }
+
+        function efectoOnda(x, y) {
+            const celda = document.querySelector(`.celda[data-x="${x}"][data-y="${y}"]`);
+            if (!celda.classList.contains('descubierta') && !celda.classList.contains('bandera')) {
+                celda.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    celda.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+
+        function descubrirCelda(x, y) {
+            const celda = document.querySelector(`.celda[data-x="${x}"][data-y="${y}"]`);
+            if (celda.classList.contains('descubierta') || celda.classList.contains('bandera')) return;
+
+            if (tablero[x][y] === -3) {
+                const powerup = powerups.find(p => p.x === x && p.y === y);
+                usarPowerup(powerup, x, y);
+                return;
+            }
+
+            celda.classList.add('descubierta');
+            celdasDescubiertas++;
+            
+            if (tablero[x][y] === -1 || tablero[x][y] === -2) {
+                playSound(tablero[x][y] === -2 ? 'sonidoMinaDorada' : 'sonidoMina');
+                
+                if (escudoActivo) {
+                    escudoActivo = false;
+                    celda.textContent = tablero[x][y] === -2 ? '💰' : '💣';
+                    celda.classList.add(tablero[x][y] === -2 ? 'mina-dorada' : 'mina');
+                    alert('¡El escudo te ha protegido de esta mina!');
+                    return;
+                }
+                
+                celda.textContent = tablero[x][y] === -2 ? '💰' : '💣';
+                celda.classList.add(tablero[x][y] === -2 ? 'mina-dorada' : 'mina');
+                
+                const explosion = document.createElement('div');
+                explosion.className = 'explosion';
+                explosion.style.left = `${y * 33 + 15}px`;
+                explosion.style.top = `${x * 33 + 15}px`;
+                document.getElementById('tablero').appendChild(explosion);
+                
+                setTimeout(() => {
+                    explosion.remove();
+                    alert('¡Boom! Has perdido.');
+                    mostrarTodasLasMinas();
+                }, 500);
+            } else if (tablero[x][y] > 0) {
+                playSound('sonidoCelda');
+                celda.textContent = tablero[x][y];
+                puntos += tablero[x][y] * nivel;
+                actualizarPuntos();
+            } else {
+                playSound('sonidoCelda');
+                puntos += 5 * nivel;
+                actualizarPuntos();
+                
+                const celdasPorDescubrir = [];
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < filas && ny >= 0 && ny < columnas) {
+                            celdasPorDescubrir.push({nx, ny});
+                        }
+                    }
+                }
+                
+                function procesarLote(indice) {
+                    const lote = celdasPorDescubrir.slice(indice, indice + 5);
+                    lote.forEach(({nx, ny}) => {
+                        descubrirCelda(nx, ny);
+                    });
+                    
+                    if (indice + 5 < celdasPorDescubrir.length) {
+                        setTimeout(() => procesarLote(indice + 5), 0);
+                    }
+                }
+                
+                procesarLote(0);
+            }
+            
+            if (celdasDescubiertas === (filas * columnas - minas - powerups.length)) {
+                playSound('sonidoVictoria');
+                const bonusDorado = minasDoradas.length * 50 * nivel;
+                puntos += bonusDorado;
+                
+                setTimeout(() => {
+                    alert(`¡Felicidades! Has ganado.\nBonus por minas doradas: +${bonusDorado} puntos`);
+                    mostrarTodasLasMinas();
+                    nivel++;
+                    document.getElementById('nivel').textContent = nivel;
+                }, 500);
+            }
+        }
+
+        function usarPowerup(powerup, x, y) {
+            const celda = document.querySelector(`.celda[data-x="${x}"][data-y="${y}"]`);
+            celda.classList.add('descubierta');
+            playSound('sonidoPowerup');
+            
+            if (powerup.tipo === 'lupa') {
+                const celdasSeguras = [];
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < filas && ny >= 0 && ny < columnas && tablero[nx][ny] >= 0) {
+                            celdasSeguras.push({nx, ny});
+                        }
+                    }
+                }
+                
+                function revelarLote(indice) {
+                    const lote = celdasSeguras.slice(indice, indice + 5);
+                    lote.forEach(({nx, ny}) => {
+                        const celdaAdy = document.querySelector(`.celda[data-x="${nx}"][data-y="${ny}"]`);
+                        if (!celdaAdy.classList.contains('descubierta')) {
+                            descubrirCelda(nx, ny);
+                        }
+                    });
+                    
+                    if (indice + 5 < celdasSeguras.length) {
+                        setTimeout(() => revelarLote(indice + 5), 0);
+                    }
+                }
+                
+                revelarLote(0);
+                puntos += 20 * nivel;
+                celda.textContent = '🔍';
+            } else {
+                escudoActivo = true;
+                puntos += 30 * nivel;
+                alert('¡Escudo activado! La próxima mina que toques no te hará perder.');
+                celda.textContent = '🛡️';
+            }
+            
+            actualizarPuntos();
+        }
+
+        function actualizarPuntos() {
+            document.getElementById('puntos').textContent = puntos;
+        }
+
+        function mostrarTodasLasMinas() {
+            for (let x = 0; x < filas; x++) {
+                for (let y = 0; y < columnas; y++) {
+                    if (tablero[x][y] === -1 || tablero[x][y] === -2) {
+                        const celda = document.querySelector(`.celda[data-x="${x}"][data-y="${y}"]`);
+                        if (!celda.classList.contains('descubierta')) {
+                            celda.textContent = tablero[x][y] === -2 ? '💰' : '💣';
+                            celda.classList.add(tablero[x][y] === -2 ? 'mina-dorada' : 'mina', 'descubierta');
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
